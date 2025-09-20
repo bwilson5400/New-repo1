@@ -1,0 +1,138 @@
+generator client { provider = "prisma-client-js" }
+datasource db { provider = "postgresql"; url = env("DATABASE_URL") }
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  name      String?
+  role      String   @default("admin") // 'admin' | 'client'
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  BillingProfile BillingProfile?
+  Sites     Site[]
+}
+
+model Site {
+  id        Int      @id @default(autoincrement())
+  name      String
+  subdomain String   @unique
+  ownerId   Int
+  owner     User     @relation(fields: [ownerId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Orders    Order[]
+  Products  Product[]
+}
+
+model Order {
+  id        Int      @id @default(autoincrement())
+  siteId    Int
+  customerId Int?
+  status    String   // draft | awaiting_payment | paid | cancelled
+  totalCents Int     @default(0)
+  squareCheckoutId String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  site      Site     @relation(fields: [siteId], references: [id])
+  items     OrderItem[]
+  promos    OrderPromotion[]
+}
+
+model OrderItem {
+  id       Int    @id @default(autoincrement())
+  orderId  Int
+  itemType String // plan | add_on | setup_fee
+  refId    String?
+  qty      Int    @default(1)
+  unitCents Int
+  metaJson Json?
+  order    Order  @relation(fields: [orderId], references: [id])
+}
+
+model Promotion {
+  id        Int      @id @default(autoincrement())
+  name      String
+  code      String?  @unique
+  type      String   // TRIAL | ONE_TIME_DISCOUNT | PERCENT_OFF | AMOUNT_OFF | FREE_ADDON
+  scope     String   // SETUP_FEE | SUBSCRIPTION | ADDON | ORDER_TOTAL
+  combinable Boolean  @default(true)
+  stackGroup String
+  priority  Int       @default(100)
+  percent   Float?
+  amountCents Int?
+  durationDays Int?
+  autoApply Boolean   @default(false)
+  targetingJson Json?
+  startAt   DateTime?
+  endAt     DateTime?
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  applied   OrderPromotion[]
+}
+
+model OrderPromotion {
+  id        Int     @id @default(autoincrement())
+  orderId   Int
+  promotionId Int
+  applied   Boolean @default(true)
+  calcSnapshotJson Json?
+  createdAt DateTime @default(now())
+  order     Order   @relation(fields: [orderId], references: [id])
+  promotion Promotion @relation(fields: [promotionId], references: [id])
+}
+
+model BillingProfile {
+  id        Int     @id @default(autoincrement())
+  userId    Int     @unique
+  squareCustomerId String?
+  lastCardId String?
+  last4     String?
+  brand     String?
+  expMonth  Int?
+  expYear   Int?
+  updatedAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Product {
+  id        Int      @id @default(autoincrement())
+  siteId    Int
+  title     String
+  slug      String
+  description String?
+  images    Json?
+  category  String?
+  tags      Json?
+  visible   Boolean  @default(true)
+  createdBy Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  site      Site     @relation(fields: [siteId], references: [id])
+  variants  ProductVariant[]
+}
+
+model ProductVariant {
+  id        Int      @id @default(autoincrement())
+  productId Int
+  sku       String?
+  optionsJson Json?
+  priceCents Int
+  stockQty  Int       @default(0)
+  visible   Boolean   @default(true)
+  product   Product   @relation(fields: [productId], references: [id])
+}
+
+model StoreOrder {
+  id        Int      @id @default(autoincrement())
+  siteId    Int
+  squareOrderId String?
+  amountCents Int
+  status    String   // created | paid | refunded | shipped
+  customerJson Json?
+  shippingJson Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  site      Site     @relation(fields: [siteId], references: [id])
+}
