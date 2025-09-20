@@ -29,5 +29,5 @@
     "@types/bcryptjs": "2.4.6",
     "ts-node": "10.9.2"
   },
-  "engines": { "node": "20.x" 
+  "engines": { "node": "18.x
 }
