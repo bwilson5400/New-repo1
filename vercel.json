@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "installCommand": "npm ci || npm i",
+  "installCommanrm -f pnpm-lock.yaml && npm ci || npm i"
   "buildCommand": "npm run vercel-build",
   "framework": "nextjs"
-}
+
